@@ -14,9 +14,11 @@ connection.connect((err) => {
 });
 
 connection.query(
-  "CREATE TABLE IF NOT EXISTS users (id int primary key auto_increment, name varchar(255), email varchar(255), password varchar(255))",
+  "CREATE TABLE IF NOT EXISTS users (id int primary key auto_increment, name varchar(255) UNIQUE NOT NULL, email varchar(255) UNIQUE NOT NULL, password varchar(255))",
   function (err, result) {
-    if (err) throw err;
+    if (err) {
+      throw err;
+    }
   }
 );
 

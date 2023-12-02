@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 const app = express();
 app.use(express.json());
 const port = 4000;
+let refreshTokens = [];
 
 app.post("/create_account", async (req, res) => {
   const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -14,19 +15,26 @@ app.post("/create_account", async (req, res) => {
 
     (err, result) => {
       if (err) {
-        console.log(err);
-        return res.status(500).send(err.message);
+        if (err.code == "ER_DUP_ENTRY") {
+          console.log("a user with that name already exists");
+          console.log(err);
+          return res.status(500).send("A user with that name already exists");
+        }
       }
-      const accessToken = jwt.sign(
+      const accessToken = generateAccessToken(req.body.email);
+      const refreshToken = jwt.sign(
         req.body.email,
-        process.env.ACCESS_TOKEN_SECRET
+        process.env.REFRESH_TOKEN_SECRET
       );
-      res.status(201).send(accessToken);
+      refreshTokens.push(refreshToken);
+
+      console.log(refreshToken, accessToken);
+      res
+        .status(201)
+        .send({ accessToken: accessToken, refreshToken: refreshToken });
     }
   );
 });
-
-let refreshTokens = [];
 
 app.post("/token", (req, res) => {
   const refreshToken = req.body.token;
