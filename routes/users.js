@@ -1,6 +1,5 @@
 import express from "express";
 import connection from "../database.js";
-import bcrypt, { hash } from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
@@ -15,9 +14,8 @@ router.get("/all", authenticateJwt, (req, res) => {
       console.error(err);
       return;
     }
-    res.send(result);
+    res.send({ NumberOfUsers: result.length, users: result });
   });
-  // res.send("you're on the users all page");
 });
 
 router.get("/:id", authenticateJwt, (req, res) => {
@@ -38,19 +36,37 @@ router.get("/:id", authenticateJwt, (req, res) => {
   );
 });
 
+router.get("/confirm/:token", (req, res) => {
+  try {
+    jwt.verify(
+      req.params.token,
+      process.env.EMAIL_CONFIRMATION_SECRET,
+
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          return res.status(403).send("Confirmation link is invalid");
+        }
+        console.log(result);
+        // TODO: set the confirmedUser column value to "true" for this user. use "result.email" to access user email
+        return res.status(200).send("Your email is now confirmed");
+      }
+    );
+  } catch {
+    console.log("could not verify confirmation token");
+  }
+});
+
 router.delete("/:id", authenticateJwt, (req, res) => {
   const userId = req.params.id;
 
-  connection.query(
-    `delete from users where id = ${req.params.id}`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        return;
-      }
-      res.send(result);
+  connection.query(`delete from users where id = ${userId}`, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
     }
-  );
+    res.send(result);
+  });
 });
 
 function authenticateJwt(req, res, next) {
