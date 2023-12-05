@@ -164,7 +164,7 @@ app.post("/login", async (req, res) => {
 
 function generateAccessToken(key) {
   return jwt.sign({ email: key }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "30s",
+    expiresIn: "3m",
   });
 }
 

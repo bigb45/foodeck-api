@@ -1,9 +1,25 @@
 import express from "express";
 import connection from "../database.js";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+
+const log = console.log;
 
 const router = express.Router();
 router.use(express.json());
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({
+  storage: storage,
+});
+
 router.get("/", (req, res) => {
   res.send("you're on the users page");
 });
@@ -44,17 +60,35 @@ router.get("/confirm/:token", (req, res) => {
 
       (err, result) => {
         if (err) {
-          console.log(err);
+          log(err);
           return res.status(403).send("Confirmation link is invalid");
         }
-        console.log(result);
+        log(result);
         // TODO: set the confirmedUser column value to "true" for this user. use "result.email" to access user email
         return res.status(200).send("Your email is now confirmed");
       }
     );
   } catch {
-    console.log("could not verify confirmation token");
+    log("could not verify confirmation token");
   }
+});
+
+function uploadFile(req, res, next) {
+  upload.single("file")(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      log("multer error" + err.message);
+      return res.status(500).send("A multer error occurred while uploading");
+    } else if (err) {
+      log("unknown error" + err.message);
+      return res.status(500).send("An unknown error occurred while uploading");
+    }
+    next();
+  });
+}
+
+router.post("/upload", uploadFile, (req, res) => {
+  log("file uploaded");
+  return res.status(200).send("uploaded successfully");
 });
 
 router.delete("/:id", authenticateJwt, (req, res) => {
@@ -62,7 +96,7 @@ router.delete("/:id", authenticateJwt, (req, res) => {
 
   connection.query(`delete from users where id = ${userId}`, (err, result) => {
     if (err) {
-      console.log(err);
+      log(err);
       return;
     }
     res.send(result);
@@ -84,7 +118,7 @@ function authenticateJwt(req, res, next) {
       next();
     });
   } catch {
-    console.log("Could not verify token");
+    log("Could not verify token");
     res.status(401).send("Could not verify token");
   }
 }
