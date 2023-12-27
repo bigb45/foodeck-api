@@ -1,7 +1,7 @@
 import express from "express";
 import connection from "../database.js";
 import jwt from "jsonwebtoken";
-import multer from "multer";
+import multer, { MulterError } from "multer";
 
 const log = console.log;
 
@@ -18,6 +18,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
 });
 
 router.get("/", (req, res) => {
@@ -34,19 +35,26 @@ router.get("/all", authenticateJwt, (req, res) => {
   });
 });
 
-router.get("/:id", authenticateJwt, (req, res) => {
+router.get("/:id", (req, res) => {
   connection.query(
-    `select * from users where id = ${req.params.id}`,
+    `select id, name, email from users where id = ${req.params.id}`,
     (err, result) => {
       if (err) {
-        console.error(err);
-        return;
+        log(err.message);
+
+        return res.status(404).send({ error: err.message });
       }
       if (result.length === 0) {
-        res.status(404).send("User not found");
+        log("user not found");
+        res.status(404).send({ error: "user not found" });
         return;
       } else {
-        res.send(result[0]);
+        console.log(result[0]);
+        res.send({
+          userId: result[0].id.toString(),
+          name: result[0].name,
+          email: result[0].email,
+        });
       }
     }
   );
@@ -73,13 +81,24 @@ router.get("/confirm/:token", (req, res) => {
   }
 });
 
+function fileFilter(req, file, callback) {
+  if (file.mimetype != "image/png" && file.mimetype != "image/jpeg") {
+    return callback(
+      new Error(`Invalid file type ${file.mimetype}, only images allowed`),
+      false
+    );
+  }
+
+  return callback(null, true);
+}
+
 function uploadFile(req, res, next) {
   upload.single("file")(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      log("multer error" + err.message);
+      log("multer error " + err.message);
       return res.status(500).send("A multer error occurred while uploading");
     } else if (err) {
-      log("unknown error" + err.message);
+      log("error " + err.message);
       return res.status(500).send("An unknown error occurred while uploading");
     }
     next();

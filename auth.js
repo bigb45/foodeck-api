@@ -7,8 +7,10 @@ import hbs from "nodemailer-express-handlebars";
 import path from "path";
 import fs from "fs";
 
+const log = console.log;
 // configure mailing service
 
+const baseUrl = process.env.BASE_URL || "192.168.1.104";
 const app = express();
 app.use(express.json());
 const port = 4000;
@@ -50,17 +52,23 @@ app.post("/create_account", async (req, res) => {
     connection.query(
       `insert into users (name, email, password) values ("${name}", "${email}", "${hashedPassword}");`,
 
-      (err, result) => {
+      async (err, result) => {
         if (err) {
           console.log("Error while inserting user data");
+          return res.status(500).send("Error while inserting user data" + err);
         }
+
+        let userId = await getUserByColumn(email, "email");
+        log("user is: " + userId[0].id);
         const accessToken = generateAccessToken(email);
         const refreshToken = jwt.sign(email, process.env.REFRESH_TOKEN_SECRET);
         refreshTokens.push(refreshToken);
-        confirmUser(email);
-        return res
-          .status(201)
-          .send({ accessToken: accessToken, refreshToken: refreshToken });
+        // confirmUser(email);
+        return res.status(201).send({
+          userId: userId[0].id,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        });
       }
     );
   }
@@ -74,7 +82,7 @@ async function confirmUser(userEmail) {
       expiresIn: "2h",
     },
     (err, token) => {
-      const url = `http://192.168.1.105:3000/users/confirm/${token}`;
+      const url = `http://${baseUrl}:3000/users/confirm/${token}`;
       try {
         sendMail(url, userEmail);
       } catch {
@@ -105,7 +113,7 @@ app.post("/token", (req, res) => {
   }
 
   if (!refreshTokens.includes(refreshToken)) {
-    return res.status(403).send("Unauthorized token");
+    return res.status(401).send("Unauthorized token");
   }
   try {
     jwt.verify(
@@ -125,13 +133,21 @@ app.post("/token", (req, res) => {
   }
 });
 
+app.delete("/logout", (req, res) => {
+  // TODO: delete refresh token from db
+  refreshTokens = refreshTokens.filter((token) => token !== req.body.token);
+  res.sendStatus(204);
+});
+
+app.post("/login_with_token", async (req, res) => {});
+
 app.post("/login", async (req, res) => {
   try {
     const result = await getUserByEmail(req.body.email);
 
     // check if user exists
     if (result.length === 0) {
-      return res.status(500).send("Unregistered account");
+      return res.status(404).send({ error: "user not found" });
     }
 
     // check password
@@ -150,14 +166,18 @@ app.post("/login", async (req, res) => {
       );
 
       refreshTokens.push(refreshToken);
-
-      return res
-        .status(203)
-        .send({ accessToken: accessToken, refreshToken: refreshToken });
+      let userId = await getUserByColumn(req.body.email, "email");
+      log("user is: " + userId[0].id);
+      return res.status(203).send({
+        userId: userId[0].id,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      });
     } else {
       return res.status(403).send("Wrong password or email");
     }
   } catch (e) {
+    log(e);
     res.status(500).send(e);
   }
 });
