@@ -37,7 +37,7 @@ router.get("/all", authenticateJwt, (req, res) => {
 
 router.get("/:id", (req, res) => {
   connection.query(
-    `select id, name, email from users where id = ${req.params.id}`,
+    `select id, username, email from users where id = "${req.params.id}"`,
     (err, result) => {
       if (err) {
         log(err.message);
@@ -52,7 +52,7 @@ router.get("/:id", (req, res) => {
         console.log(result[0]);
         res.send({
           userId: result[0].id.toString(),
-          name: result[0].name,
+          name: result[0].username,
           email: result[0].email,
         });
       }
