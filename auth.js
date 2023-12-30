@@ -87,10 +87,10 @@ async function createNewUser(email, name) {
     async (err, result) => {
       if (err) {
         console.log("Error while inserting user data" + err);
-        return "Error while inserting user data" + err;
+        throw err;
       }
       log("created new user with email " + email);
-      return "user created";
+      return userId;
     }
   );
 }
@@ -182,27 +182,34 @@ app.post("/login_with_token/:provider", async (req, res) => {
     };
   }
   try {
+    let userId = "";
     getUserByColumn(userInfo.userEmail, "email").then((result) => {
       if (result.length !== 0) {
         // if the email already exists, do not create a new user
+        userId = result[0].id;
         log("user exists");
       } else {
         // if the email does not exist, create a new user
         log("user does not exist");
-        createNewUser(userInfo.userEmail, userInfo.username);
+        try {
+          userId = createNewUser(userInfo.userEmail, userInfo.username);
+        } catch (e) {
+          log(e);
+          return res.status(500).send({ message: `${e.message}` });
+        }
       }
       const accessToken = generateAccessToken(userInfo.userEmail);
       const refreshToken = generateRefreshToken(userInfo.userEmail);
       return res.status(201).send({
         // TODO: change this to the generated id from the database
-        userId: userInfo.id,
+        userId: userId,
         accessToken: accessToken,
         refreshToken: refreshToken,
       });
     });
   } catch (e) {
-    log(e);
-    req.res.status(200).send({ message: "Token received" });
+    log("Error while authenticating with token: " + e);
+    req.res.status(500).send({ message: `Error: ${e.message}` });
   }
 });
 
