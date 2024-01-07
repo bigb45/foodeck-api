@@ -1,12 +1,13 @@
 import express from "express";
 import connection from "../database.js";
 import jwt from "jsonwebtoken";
-import multer, { MulterError } from "multer";
+import multer from "multer";
+import { authenticateJwt } from "../util/utils.js";
 
 const log = console.log;
 
-const router = express.Router();
-router.use(express.json());
+const usersRouter = express.Router();
+usersRouter.use(express.json());
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -21,11 +22,11 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-router.get("/", (req, res) => {
+usersRouter.get("/", (req, res) => {
   res.send("you're on the users page");
 });
 
-router.get("/all", authenticateJwt, (req, res) => {
+usersRouter.get("/all", authenticateJwt, (req, res) => {
   connection.query("SELECT * FROM users", (err, result) => {
     if (err) {
       console.error(err);
@@ -35,7 +36,8 @@ router.get("/all", authenticateJwt, (req, res) => {
   });
 });
 
-router.get("/:id", (req, res) => {
+usersRouter.get("/:id", authenticateJwt, (req, res) => {
+  log(req.body, req.headers);
   connection.query(
     `select id, username, email from users where id = "${req.params.id}"`,
     (err, result) => {
@@ -60,7 +62,7 @@ router.get("/:id", (req, res) => {
   );
 });
 
-router.get("/confirm/:token", (req, res) => {
+usersRouter.get("/confirm/:token", (req, res) => {
   try {
     jwt.verify(
       req.params.token,
@@ -105,12 +107,12 @@ function uploadFile(req, res, next) {
   });
 }
 
-router.post("/upload", uploadFile, (req, res) => {
+usersRouter.post("/upload", uploadFile, (req, res) => {
   log("file uploaded");
   return res.status(200).send("uploaded successfully");
 });
 
-router.delete("/:id", authenticateJwt, (req, res) => {
+usersRouter.delete("/:id", authenticateJwt, (req, res) => {
   const userId = req.params.id;
 
   connection.query(`delete from users where id = ${userId}`, (err, result) => {
@@ -122,24 +124,4 @@ router.delete("/:id", authenticateJwt, (req, res) => {
   });
 });
 
-function authenticateJwt(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (token == null) {
-    return res.status(401).send("No token");
-  }
-  try {
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).send("Invalid token");
-      }
-      req.user = user;
-      next();
-    });
-  } catch {
-    log("Could not verify token");
-    res.status(401).send("Could not verify token");
-  }
-}
-
-export default router;
+export default usersRouter;

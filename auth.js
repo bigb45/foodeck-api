@@ -5,9 +5,8 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import hbs from "nodemailer-express-handlebars";
 import { OAuth2Client } from "google-auth-library";
-import { verify } from "crypto";
-import { v4 as uuidv4 } from "uuid";
 import FB from "fb";
+import { generateId } from "./util/utils.js";
 const log = console.log;
 // configure mailing service
 
@@ -80,7 +79,6 @@ app.post("/create_account", async (req, res) => {
 
 async function createNewUser(email, name) {
   const userId = generateId();
-  const test = "password1";
   connection.query(
     `insert into users (id, username, email) values ("${userId}", "${name}", "${email}");`,
 
@@ -187,7 +185,7 @@ app.post("/login_with_token/:provider", async (req, res) => {
       if (result.length !== 0) {
         // if the email already exists, do not create a new user
         userId = result[0].id;
-        log("user exists");
+        log("user exists" + userId);
       } else {
         // if the email does not exist, create a new user
         log("user does not exist");
@@ -195,13 +193,14 @@ app.post("/login_with_token/:provider", async (req, res) => {
           userId = createNewUser(userInfo.userEmail, userInfo.username);
         } catch (e) {
           log(e);
-          return res.status(500).send({ message: `${e.message}` });
+          return res
+            .status(500)
+            .send({ message: `error while inserting user: ${e.message}` });
         }
       }
       const accessToken = generateAccessToken(userInfo.userEmail);
       const refreshToken = generateRefreshToken(userInfo.userEmail);
       return res.status(201).send({
-        // TODO: change this to the generated id from the database
         userId: userId,
         accessToken: accessToken,
         refreshToken: refreshToken,
@@ -213,10 +212,11 @@ app.post("/login_with_token/:provider", async (req, res) => {
   }
 });
 
+// TODO: change this to a more secure method, implement middleware to prevent sql injection
 app.post("/login", async (req, res) => {
   try {
     const result = await getUserByEmail(req.body.email);
-
+    log(result);
     if (result.length === 0) {
       return res.status(404).send({ error: "user not found" });
     }
@@ -304,10 +304,6 @@ function comparePassword(inputPassword, hashedPassword) {
       }
     })
   );
-}
-
-function generateId() {
-  return uuidv4();
 }
 
 function getFacebookUserInfo() {
