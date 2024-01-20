@@ -29,7 +29,6 @@ storeRouter.get(
   /* authenticateJwt, */ async (req, res) => {
     try {
       const offers = await getOffers();
-      log(offers);
       return res.status(200).json(offers);
     } catch (exception) {
       console.log(exception);
@@ -48,7 +47,7 @@ async function getOffers() {
   return new Promise((resolve, reject) => {
     connection.query(`select * from Offers;`, async (err, result) => {
       if (err) {
-        console.log(err);
+        log(err);
         reject(err);
       } else {
         resolve(result);
