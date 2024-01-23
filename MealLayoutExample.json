@@ -1,0 +1,15 @@
+{
+  "sections": [
+    {
+      "type": "enum(radio, checkbox)",
+      "title": "section title",
+      "options": [
+        { "option": "option title 1", "price": 4.3 },
+        { "option": "option title 2", "price": 4.3 },
+        { "option": "option title 3", "price": 4.3 }
+      ],
+      "required": true,
+      "currency": "$"
+    }
+  ]
+}

@@ -39,6 +39,35 @@ storeRouter.get(
 
 storeRouter.get("/bento_categories");
 
+storeRouter.get("/custom_meal", (req, res) => {
+  return res.status(200).json({
+    sections: [
+      {
+        type: "checkbox",
+        title: "Extra Toppings",
+        options: [
+          { option: "Extra cheese", price: 5.0 },
+          { option: "Pepperoni", price: 5.0 },
+          { option: "Margarita", price: 4.75 },
+        ],
+        required: true,
+        currency: "$",
+      },
+      {
+        type: "radio",
+        title: "Extra Toppings",
+        options: [
+          { option: "Mushroom", price: 5.0 },
+          { option: "Pepperoni", price: 5.0 },
+          { option: "Margarita", price: 4.75 },
+        ],
+        required: true,
+        currency: "$",
+      },
+    ],
+  });
+});
+
 storeRouter.get("/:id", authenticateJwt, (req, res) => {
   return res.status(200).send({ id: req.params.id });
 });
