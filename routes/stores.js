@@ -40,28 +40,79 @@ storeRouter.get(
 storeRouter.get("/bento_categories");
 
 storeRouter.get("/custom_meal", (req, res) => {
+  // TODO: get custom meal from database
   return res.status(200).json({
     sections: [
       {
-        type: "checkbox",
-        title: "Extra Toppings",
+        id: "1",
+        type: "radio",
+        title: "Pizza Size",
         options: [
-          { option: "Extra cheese", price: 5.0 },
-          { option: "Pepperoni", price: 5.0 },
-          { option: "Margarita", price: 4.75 },
+          { id: "1", option: "Large", price: 12.0 },
+          { id: "2", option: "Medium", price: 10.0 },
+          { id: "3", option: "Small", price: 9 },
         ],
         required: true,
         currency: "$",
       },
       {
+        id: "1",
         type: "radio",
-        title: "Extra Toppings",
+        title: "Drink Size",
         options: [
-          { option: "Mushroom", price: 5.0 },
-          { option: "Pepperoni", price: 5.0 },
-          { option: "Margarita", price: 4.75 },
+          { id: "1", option: "Large", price: 12.0 },
+          { id: "2", option: "Medium", price: 10.0 },
+          { id: "3", option: "Small", price: 9 },
         ],
         required: true,
+        currency: "$",
+      },
+      {
+        id: "1",
+        type: "radio",
+        title: "Fries Size",
+        options: [
+          { id: "1", option: "Large", price: 12.0 },
+          { id: "2", option: "Medium", price: 10.0 },
+          { id: "3", option: "Small", price: 9 },
+        ],
+        required: true,
+        currency: "$",
+      },
+      {
+        id: "3",
+        type: "radio",
+        title: "Pizza Size1",
+        options: [
+          { id: "4", option: "Large", price: 12.0 },
+          { id: "5", option: "Medium", price: 10.0 },
+          { id: "6", option: "Small", price: 9 },
+        ],
+        required: true,
+        currency: "$",
+      },
+      {
+        id: "4",
+        type: "checkbox",
+        title: "Extra Toppings",
+        options: [
+          { id: "10", option: "Extra cheese", price: 5.0 },
+          { id: "11", option: "Pepperoni", price: 5.0 },
+          { id: "12", option: "Margarita", price: 4.75 },
+        ],
+        required: false,
+        currency: "$",
+      },
+      {
+        id: "2",
+        type: "checkbox",
+        title: "Extra Toppings",
+        options: [
+          { id: "7", option: "Extra cheese", price: 5.0 },
+          { id: "8", option: "Pepperoni", price: 5.0 },
+          { id: "9", option: "Margarita", price: 4.75 },
+        ],
+        required: false,
         currency: "$",
       },
     ],
