@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^5.8.1",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
@@ -24,8 +25,11 @@
     "mysql2": "^3.6.5",
     "nodemailer": "^6.9.7",
     "nodemailer-express-handlebars": "^6.1.0",
+    "nodemon": "^3.0.3",
     "uuid": "^9.0.1"
   },
   "type": "module",
-  "devDependencies": {}
+  "devDependencies": {
+    "prisma": "^5.8.1"
+  }
 }

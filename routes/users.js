@@ -1,5 +1,5 @@
 import express from "express";
-import connection from "../database.js";
+import { connection } from "../db.js";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import { authenticateJwt } from "../util/utils.js";

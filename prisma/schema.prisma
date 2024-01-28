@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model StoreItem {
+  item_id         String    @id @default("3") @db.VarChar(255)
+  store           Store     @relation(fields: [store_id], references: [store_id])
+  store_id        String    @db.VarChar(255)
+  item_name       String    @db.VarChar(255)
+  description     String    @db.VarChar(255)
+  price           Float
+  cover_image_url String?   @db.VarChar(255)
+  sections        Section[]
+
+  @@index([store_id], map: "store_id_idx")
+}
+
+model Offer {
+  offer_id        String  @id @db.VarChar(255)
+  offer_name      String  @db.VarChar(255)
+  cover_image_url String? @db.VarChar(255)
+}
+
+model Store {
+  store_id        String      @id @db.VarChar(255)
+  store_name      String      @db.VarChar(255)
+  address         String      @db.VarChar(255)
+  delivery_time   Int
+  phone           String      @db.VarChar(255)
+  cover_image_url String?     @db.VarChar(255)
+  rating          Float       @db.Float
+  StoreItem       StoreItem[]
+}
+
+model User {
+  id       String  @id @db.VarChar(255)
+  username String  @db.VarChar(255)
+  email    String  @unique(map: "email") @db.VarChar(255)
+  password String? @db.VarChar(255)
+}
+
+model Section {
+  section_id    String     @id @db.VarChar(255)
+  section_name  String     @db.VarChar(255)
+  required      Boolean    @default(false)
+  StoreItem     StoreItem? @relation(fields: [store_item_id], references: [item_id])
+  store_item_id String?    @db.VarChar(255)
+  Option        Option[]
+
+  @@index([store_item_id])
+}
+
+model Option {
+  option_id   String  @id @db.VarChar(255)
+  option_name String  @db.VarChar(255)
+  price       Float
+  section     Section @relation(fields: [section_id], references: [section_id])
+  section_id  String  @db.VarChar(255)
+
+  @@index([section_id])
+}

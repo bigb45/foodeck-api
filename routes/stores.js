@@ -1,5 +1,5 @@
 import express from "express";
-import connection from "../database.js";
+import { connection } from "../db.js";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import { authenticateJwt } from "../util/utils.js";
@@ -25,6 +25,17 @@ storeRouter.get(
 );
 
 storeRouter.get(
+  // get store menus by store id
+  "/:store_id/menu/all",
+  (req, res) => {}
+);
+
+storeRouter.get(
+  // get store menu by id, returns menu info, isMenuFavorite, menu customization options
+  "/:store_id/menu/:menu_id"
+);
+// fixme: migrate to
+storeRouter.get(
   "/offers",
   /* authenticateJwt, */ async (req, res) => {
     try {
@@ -37,7 +48,12 @@ storeRouter.get(
   }
 );
 
-storeRouter.get("/bento_categories");
+storeRouter.get("/bento_categories/:id", async (req, res) => {
+  let users = await connection.User.findUnique({
+    where: { id: req.params.id },
+  });
+  res.status(200).json(users);
+});
 
 storeRouter.get("/custom_meal", (req, res) => {
   // TODO: get custom meal from database
@@ -119,10 +135,13 @@ storeRouter.get("/custom_meal", (req, res) => {
   });
 });
 
-storeRouter.get("/:id", authenticateJwt, (req, res) => {
-  return res.status(200).send({ id: req.params.id });
-});
-
+storeRouter.get(
+  "/:id",
+  /* authenticateJwt,*/ (req, res) => {
+    return res.status(200).send({ id: req.params.id });
+  }
+);
+// fixme: migrate to prisma
 async function getOffers() {
   return new Promise((resolve, reject) => {
     connection.query(`select * from Offers;`, async (err, result) => {
@@ -135,6 +154,8 @@ async function getOffers() {
     });
   });
 }
+
+// fixme: migrate to prisma
 async function getRestaurants() {
   return new Promise((resolve, reject) => {
     connection.query(`select * from Stores;`, async (err, result) => {
