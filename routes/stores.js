@@ -3,7 +3,7 @@ import { connection } from "../db.js";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import { authenticateJwt } from "../util/utils.js";
-import e from "express";
+import { Prisma } from "@prisma/client";
 
 const log = console.log;
 
@@ -15,11 +15,13 @@ storeRouter.get(
   "/all",
   /*authenticateJwt,*/ async (req, res) => {
     try {
-      const restaurants = await getRestaurants();
-      return res.status(200).json(restaurants);
-    } catch (exception) {
-      console.log(exception);
-      return res.status(500).send("Error: " + exception);
+      const result = await connection.Store.findMany({
+        orderBy: { rating: "desc" },
+      });
+      res.status(200).json(result);
+    } catch (e) {
+      log(e);
+      return res.status(500).send("Error: " + e);
     }
   }
 );
@@ -27,19 +29,56 @@ storeRouter.get(
 storeRouter.get(
   // get store menus by store id
   "/:store_id/menu/all",
-  (req, res) => {}
+  async (req, res) => {
+    try {
+      // TODO: join this with storeSection
+
+      const storeItems = await connection.StoreItem.findMany({
+        where: { store_id: req.params.store_id },
+        select: {
+          item_name: true,
+          price: true,
+          description: true,
+          cover_image_url: true,
+          item_id: true,
+          section: {
+            select: {
+              section_title: true,
+            },
+          },
+        },
+      });
+      res.status(200).json(storeItems);
+    } catch (e) {
+      log(e);
+      return res.status(500).json({ Error: e });
+    }
+  }
 );
 
 storeRouter.get(
   // get store menu by id, returns menu info, isMenuFavorite, menu customization options
-  "/:store_id/menu/:menu_id"
+  "/:store_id/menu/:menu_id",
+  async (req, res) => {
+    try {
+      const menu = await connection.StoreItem.findUnique({
+        where: {
+          item_id: req.params.menu_id,
+          store: { store_id: { equals: req.params.store_id } },
+        },
+      });
+      res.status(200).json(menu);
+    } catch (e) {
+      log(e);
+      return res.status(500).send("Error: " + e);
+    }
+  }
 );
-// fixme: migrate to
 storeRouter.get(
   "/offers",
   /* authenticateJwt, */ async (req, res) => {
     try {
-      const offers = await getOffers();
+      const offers = await connection.Offer.findMany();
       return res.status(200).json(offers);
     } catch (exception) {
       console.log(exception);
@@ -48,6 +87,7 @@ storeRouter.get(
   }
 );
 
+// TODO: get data from database
 storeRouter.get("/bento_categories/:id", async (req, res) => {
   let users = await connection.User.findUnique({
     where: { id: req.params.id },
@@ -141,32 +181,5 @@ storeRouter.get(
     return res.status(200).send({ id: req.params.id });
   }
 );
-// fixme: migrate to prisma
-async function getOffers() {
-  return new Promise((resolve, reject) => {
-    connection.query(`select * from Offers;`, async (err, result) => {
-      if (err) {
-        log(err);
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-// fixme: migrate to prisma
-async function getRestaurants() {
-  return new Promise((resolve, reject) => {
-    connection.query(`select * from Stores;`, async (err, result) => {
-      if (err) {
-        console.log(err);
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
 
 export default storeRouter;
