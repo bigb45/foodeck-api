@@ -27,28 +27,40 @@ storeRouter.get(
 );
 
 storeRouter.get(
-  // get store menus by store id
+  // get all menus of a store by store id
   "/:store_id/menu/all",
   async (req, res) => {
     try {
-      // TODO: join this with storeSection
+      const sections = await connection.StoreSection.findMany({
+        where: {
+          store_id: req.params.store_id,
+        },
 
-      const storeItems = await connection.StoreItem.findMany({
-        where: { store_id: req.params.store_id },
         select: {
-          item_name: true,
-          price: true,
-          description: true,
-          cover_image_url: true,
-          item_id: true,
-          section: {
+          section_id: true,
+          section_title: true,
+
+          StoreItem: {
             select: {
-              section_title: true,
+              item_id: true,
+              item_name: true,
+              description: true,
+              price: true,
+              cover_image_url: true,
+            },
+            where: {
+              section_id: {
+                equals: connection.StoreSection.section_id,
+              },
+              store_id: {
+                equals: req.params.store_id,
+              },
             },
           },
         },
       });
-      res.status(200).json(storeItems);
+
+      res.status(200).json(sections);
     } catch (e) {
       log(e);
       return res.status(500).json({ Error: e });
