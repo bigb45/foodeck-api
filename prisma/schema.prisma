@@ -9,18 +9,22 @@ datasource db {
 }
 
 model StoreItem {
-  item_id         String       @id @db.VarChar(255)
-  section_id      String       @db.VarChar(255)
-  store_id        String       @db.VarChar(255)
-  item_name       String       @db.VarChar(255)
-  description     String       @db.VarChar(255)
-  price           Float
-  cover_image_url String?      @db.VarChar(255)
-  section         StoreSection @relation(fields: [section_id], references: [section_id])
-  store           Store        @relation(fields: [store_id], references: [store_id])
+  item_id               String         @id @db.VarChar(255)
+  store_item_section_id String         @db.VarChar(255)
+  item_name             String         @db.VarChar(255)
+  description           String         @db.VarChar(255)
+  price                 Float
+  cover_image_url       String?        @db.VarChar(255)
+  store_id              String         @db.VarChar(255)
+  option_section_id     String?        @db.VarChar(255)
+  store                 Store          @relation(fields: [store_id], references: [store_id])
+  OptionSection         OptionSection? @relation(fields: [option_section_id], references: [section_id])
+  section               StoreSection   @relation(fields: [store_item_section_id], references: [section_id])
+  Option                Option[]
 
-  @@index([section_id])
+  @@index([store_item_section_id], map: "StoreItem_section_id_idx")
   @@index([store_id])
+  @@index([option_section_id])
 }
 
 model Offer {
@@ -49,19 +53,26 @@ model User {
 }
 
 model Option {
-  option_id   String @id @db.VarChar(255)
-  option_name String @db.VarChar(255)
-  price       Float
-  section_id  String @db.VarChar(255)
+  option_id     String        @id @db.VarChar(255)
+  option_name   String        @db.VarChar(255)
+  price         Float
+  section_id    String        @db.VarChar(255)
+  store_item_id String        @db.VarChar(255)
+  section       OptionSection @relation(fields: [section_id], references: [section_id])
+  storeItem     StoreItem     @relation(fields: [store_item_id], references: [item_id])
 
   @@index([section_id])
+  @@index([store_item_id])
 }
 
 model OptionSection {
-  section_id    String  @id @db.VarChar(255)
-  section_name  String  @db.VarChar(255)
-  required      Boolean @default(false)
-  store_item_id String? @db.VarChar(255)
+  section_id    String      @id @db.VarChar(255)
+  section_name  String      @db.VarChar(255)
+  required      Boolean     @default(false)
+  store_item_id String      @db.VarChar(255)
+  Option        Option[]
+  StoreItem     StoreItem[]
+  sectionType   SectionType @default(radio)
 
   @@index([store_item_id], map: "Section_store_item_id_idx")
 }
@@ -74,4 +85,9 @@ model StoreSection {
   Store         Store?      @relation(fields: [store_id], references: [store_id])
 
   @@index([store_id], map: "Section_store_id_idx")
+}
+
+enum SectionType {
+  radio
+  checkbox
 }

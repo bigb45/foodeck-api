@@ -49,7 +49,7 @@ storeRouter.get(
               cover_image_url: true,
             },
             where: {
-              section_id: {
+              store_item_section_id: {
                 equals: connection.StoreSection.section_id,
               },
               store_id: {
@@ -107,84 +107,108 @@ storeRouter.get("/bento_categories/:id", async (req, res) => {
   res.status(200).json(users);
 });
 
-storeRouter.get("/custom_meal", (req, res) => {
-  // TODO: get custom meal from database
-  return res.status(200).json({
-    sections: [
-      {
-        id: "1",
-        type: "radio",
-        title: "Pizza Size",
-        options: [
-          { id: "1", option: "Large", price: 12.0 },
-          { id: "2", option: "Medium", price: 10.0 },
-          { id: "3", option: "Small", price: 9 },
-        ],
+storeRouter.get("/:store_id/:menu_id/options", async (req, res) => {
+  try {
+    const menuOptions = await connection.OptionSection.findMany({
+      where: {
+        store_item_id: req.params.menu_id,
+      },
+      select: {
+        section_id: true,
+        sectionType: true,
+        section_name: true,
+        Option: {
+          select: {
+            option_id: true,
+            option_name: true,
+            price: true,
+          },
+        },
         required: true,
-        currency: "$",
       },
-      {
-        id: "2",
-        type: "radio",
-        title: "Drink Size",
-        options: [
-          { id: "1", option: "Large", price: 12.0 },
-          { id: "2", option: "Medium", price: 10.0 },
-          { id: "3", option: "Small", price: 9 },
-        ],
-        required: true,
-        currency: "$",
-      },
-      {
-        id: "3",
-        type: "radio",
-        title: "Fries Size",
-        options: [
-          { id: "1", option: "Large", price: 12.0 },
-          { id: "2", option: "Medium", price: 10.0 },
-          { id: "3", option: "Small", price: 9 },
-        ],
-        required: true,
-        currency: "$",
-      },
-      {
-        id: "4",
-        type: "radio",
-        title: "Pizza Size1",
-        options: [
-          { id: "4", option: "Large", price: 12.0 },
-          { id: "5", option: "Medium", price: 10.0 },
-          { id: "6", option: "Small", price: 9 },
-        ],
-        required: true,
-        currency: "$",
-      },
-      {
-        id: "5",
-        type: "checkbox",
-        title: "Extra Toppings",
-        options: [
-          { id: "10", option: "Extra cheese", price: 5.0 },
-          { id: "11", option: "Pepperoni", price: 5.0 },
-          { id: "12", option: "Margarita", price: 4.75 },
-        ],
-        required: false,
-        currency: "$",
-      },
-      {
-        id: "6",
-        type: "checkbox",
-        title: "Extra Toppings",
-        options: [
-          { id: "7", option: "Extra cheese", price: 5.0 },
-          { id: "8", option: "Pepperoni", price: 5.0 },
-          { id: "9", option: "Margarita", price: 4.75 },
-        ],
-        required: false,
-        currency: "$",
-      },
-    ],
-  });
+    });
+    return res.status(200).json({ sections: menuOptions });
+  } catch (e) {
+    log(e.message);
+    return res.status(500).send("Error: " + e.message);
+  }
+
+  // return res.status(200).json({
+  //   sections: [
+  //     {
+  //       id: "1",
+  //       type: "radio",
+  //       title: "Pizza Size",
+  //       options: [
+  //         { id: "1", option: "Large", price: 12.0 },
+  //         { id: "2", option: "Medium", price: 10.0 },
+  //         { id: "3", option: "Small", price: 9 },
+  //       ],
+  //       required: true,
+  //       currency: "$",
+  //     },
+  //     {
+  //       id: "2",
+  //       type: "radio",
+  //       title: "Drink Size",
+  //       options: [
+  //         { id: "1", option: "Large", price: 12.0 },
+  //         { id: "2", option: "Medium", price: 10.0 },
+  //         { id: "3", option: "Small", price: 9 },
+  //       ],
+  //       required: true,
+  //       currency: "$",
+  //     },
+  //     {
+  //       id: "3",
+  //       type: "radio",
+  //       title: "Fries Size",
+  //       options: [
+  //         { id: "1", option: "Large", price: 12.0 },
+  //         { id: "2", option: "Medium", price: 10.0 },
+  //         { id: "3", option: "Small", price: 9 },
+  //       ],
+  //       required: true,
+  //       currency: "$",
+  //     },
+  //     {
+  //       id: "4",
+  //       type: "radio",
+  //       title: "Pizza Size1",
+  //       options: [
+  //         { id: "4", option: "Large", price: 12.0 },
+  //         { id: "5", option: "Medium", price: 10.0 },
+  //         { id: "6", option: "Small", price: 9 },
+  //       ],
+  //       required: true,
+  //       currency: "$",
+  //     },
+  //     {
+  //       id: "5",
+  //       type: "checkbox",
+  //       title: "Extra Toppings",
+  //       options: [
+  //         { id: "10", option: "Extra cheese", price: 5.0 },
+  //         { id: "11", option: "Pepperoni", price: 5.0 },
+  //         { id: "12", option: "Margarita", price: 4.75 },
+  //       ],
+  //       required: false,
+  //       currency: "$",
+  //     },
+  //     {
+  //       id: "6",
+  //       type: "checkbox",
+  //       title: "Extra Toppings",
+  //       options: [
+  //         { id: "7", option: "Extra cheese", price: 5.0 },
+  //         { id: "8", option: "Pepperoni", price: 5.0 },
+  //         { id: "9", option: "Margarita", price: 4.75 },
+  //       ],
+  //       required: false,
+  //       currency: "$",
+  //     },
+  //   ],
+  // });
 });
 
 storeRouter.get(
