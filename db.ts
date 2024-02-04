@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 
 // eslint-disable-next-line no-var, no-unused-vars
-var cachedPrisma;
+declare global {
+  // eslint-disable-next-line no-var, no-unused-vars
+  var cachedPrisma: PrismaClient;
+}
 
-let prisma;
+let prisma: PrismaClient;
 if (process.env.NODE_ENV === "production") {
   prisma = new PrismaClient();
 } else {

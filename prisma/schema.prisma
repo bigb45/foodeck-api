@@ -22,7 +22,7 @@ model StoreItem {
   section               StoreSection   @relation(fields: [store_item_section_id], references: [section_id])
   Option                Option[]
 
-  @@index([store_item_section_id], map: "StoreItem_section_id_idx")
+  @@index([store_item_section_id])
   @@index([store_id])
   @@index([option_section_id])
 }
@@ -84,7 +84,8 @@ model StoreSection {
   StoreItem     StoreItem[]
   Store         Store?      @relation(fields: [store_id], references: [store_id])
 
-  @@index([store_id], map: "Section_store_id_idx")
+  @@index([store_id])
+  @@index([section_id])
 }
 
 enum SectionType {

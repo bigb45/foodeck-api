@@ -2,11 +2,11 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "auth": "nodemon auth.js"
+    "dev": "nodemon ./src/server.ts",
+    "auth": "nodemon auth.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,8 +28,15 @@
     "nodemon": "^3.0.3",
     "uuid": "^9.0.1"
   },
-  "type": "module",
+  "type": "commonjs",
   "devDependencies": {
-    "prisma": "^5.8.1"
+    "@types/express": "^4.17.21",
+    "@types/express-handlebars": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.11.16",
+    "@types/uuid": "^9.0.8",
+    "prisma": "^5.8.1",
+    "ts-node": "^10.9.2"
   }
 }
