@@ -50,6 +50,10 @@ app.post("/create_account", async (req, res) => {
     else {
         const hashedPassword = await bcrypt_1.default.hash(req.body.password, 10);
         const userId = (0, middleware_1.generateId)();
+        res.status(200).json({
+            userId: userId,
+            message: "Account created successfully!",
+        });
         // connection.query(
         //   `insert into users (id, username, email, password) values ("${userId}", "${name}", "${email}", "${hashedPassword}");`,
         //   async (err: Error, result: Response) => {
@@ -260,6 +264,14 @@ function getUserByEmail(email) {
 }
 function getUserByColumn(name, columnName) {
     return new Promise((resolve, reject) => {
+        resolve([
+            {
+                id: "123",
+                username: name,
+                email: "${name}@gmail.com",
+                password: "123",
+            },
+        ]);
         // connection.query(
         //   `select * from users where ${columnName} = "${name}";`,
         //   async (err, result) => {

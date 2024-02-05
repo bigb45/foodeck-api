@@ -22,9 +22,9 @@ model StoreItem {
   section               StoreSection   @relation(fields: [store_item_section_id], references: [section_id])
   Option                Option[]
 
-  @@index([store_item_section_id])
   @@index([store_id])
   @@index([option_section_id])
+  @@index([store_item_section_id], map: "StoreItem_section_id_idx")
 }
 
 model Offer {
@@ -70,9 +70,9 @@ model OptionSection {
   section_name  String      @db.VarChar(255)
   required      Boolean     @default(false)
   store_item_id String      @db.VarChar(255)
+  sectionType   SectionType @default(radio)
   Option        Option[]
   StoreItem     StoreItem[]
-  sectionType   SectionType @default(radio)
 
   @@index([store_item_id], map: "Section_store_item_id_idx")
 }
@@ -84,8 +84,14 @@ model StoreSection {
   StoreItem     StoreItem[]
   Store         Store?      @relation(fields: [store_id], references: [store_id])
 
-  @@index([store_id])
-  @@index([section_id])
+  @@index([store_id], map: "Section_store_id_idx")
+}
+
+model BentoSection {
+  id        String  @id @db.VarChar(255)
+  name      String? @db.VarChar(255)
+  title     String? @db.VarChar(255)
+  image_url String? @db.VarChar(255)
 }
 
 enum SectionType {

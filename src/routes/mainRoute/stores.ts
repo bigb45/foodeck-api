@@ -24,23 +24,13 @@ storeRouter.get(
 );
 
 storeRouter.get("/bento_categories", async (req: Request, res: Response) => {
-  res.status(200).json([
-    {
-      id: 1,
-      name: "Desserts",
-      subText: "Get your sweet tooth fix with these delicious desserts",
-    },
-    {
-      id: 2,
-      name: "Ramen",
-      subText: "Authentic Asian Ramen, made with love",
-    },
-    {
-      id: 3,
-      name: "Snacks",
-      subText: "Delicious snacks to keep you going",
-    },
-  ]);
+  try {
+    const categories = await connection.bentoSection.findMany();
+    res.status(200).json(categories);
+  } catch (e) {
+    log(e);
+    return res.status(500).send("Error: " + e);
+  }
 });
 
 storeRouter.get(
