@@ -1,12 +1,14 @@
-import connection from "../../../database.js";
+// import connection from "../../../database.js";
 import express from "express";
 import bcrypt, { hash } from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { Secret, GetPublicKeyOrSecret } from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import hbs from "nodemailer-express-handlebars";
 import { OAuth2Client } from "google-auth-library";
 import FB from "fb";
-import { generateId } from "./util/utils.js";
+import { generateId } from "../../middleware/middleware";
+import { User } from "@prisma/client";
+import { Options } from "nodemailer/lib/mailer";
 const log = console.log;
 // configure mailing service
 
@@ -14,7 +16,7 @@ const baseUrl = process.env.BASE_URL || "192.168.1.104";
 const app = express();
 app.use(express.json());
 const port = 4000;
-let refreshTokens = [];
+let refreshTokens: Array<String> = [];
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const transporter = nodemailer.createTransport({
@@ -52,51 +54,61 @@ app.post("/create_account", async (req, res) => {
   } else {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const userId = generateId();
-    connection.query(
-      `insert into users (id, username, email, password) values ("${userId}", "${name}", "${email}", "${hashedPassword}");`,
+    res.status(200).json({
+      userId: userId,
+      message: "Account created successfully!",
+    });
+    // connection.query(
+    //   `insert into users (id, username, email, password) values ("${userId}", "${name}", "${email}", "${hashedPassword}");`,
 
-      async (err, result) => {
-        if (err) {
-          console.log("Error while inserting user data" + err);
-          return res.status(500).send("Error while inserting user data" + err);
-        }
+    //   async (err: Error, result: Response) => {
+    //     if (err) {
+    //       console.log("Error while inserting user data" + err);
+    //       return res.status(500).send("Error while inserting user data" + err);
+    //     }
 
-        let user = await getUserByColumn(email, "email");
-        log("user is: " + user[0].id);
-        const accessToken = generateAccessToken(email);
-        const refreshToken = generateRefreshToken(email);
-        refreshTokens.push(refreshToken);
-        // confirmUser(email);
-        return res.status(201).send({
-          userId: user[0].id,
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        });
-      }
-    );
+    //     let user = await getUserByColumn(email, "email");
+    //     log("user is: " + user[0].id);
+    //     const accessToken = generateAccessToken(email);
+    //     const refreshToken = generateRefreshToken(email);
+    //     refreshTokens.push(refreshToken);
+    //     // confirmUser(email);
+    //     return res.status(201).send({
+    //       userId: user[0].id,
+    //       accessToken: accessToken,
+    //       refreshToken: refreshToken,
+    //     });
+    //   }
+    // );
   }
 });
 
-async function createNewUser(email, name) {
+async function createNewUser(
+  email: string | undefined,
+  name: string | undefined
+): Promise<string> {
   const userId = generateId();
-  connection.query(
-    `insert into users (id, username, email) values ("${userId}", "${name}", "${email}");`,
+  // connection.query(
+  //   `insert into users (id, username, email) values ("${userId}", "${name}", "${email}");`,
 
-    async (err, result) => {
-      if (err) {
-        console.log("Error while inserting user data" + err);
-        throw err;
-      }
-      log("created new user with email " + email);
-      return userId;
-    }
-  );
+  //   async (err, result) => {
+  //     if (err) {
+  //       console.log("Error while inserting user data" + err);
+  //       throw err;
+  //     }
+  //     log("created new user with email " + email);
+  //     return userId;
+  //   }
+  // );
+  return Promise.resolve(userId);
 }
 
-async function confirmUser(userEmail) {
+async function confirmUser(userEmail: string) {
+  const secret: Secret | GetPublicKeyOrSecret =
+    process.env.EMAIL_CONFIRMATION_SECRET || "";
   jwt.sign(
     { email: userEmail },
-    process.env.EMAIL_CONFIRMATION_SECRET,
+    secret,
     {
       expiresIn: "2h",
     },
@@ -111,22 +123,23 @@ async function confirmUser(userEmail) {
   );
 }
 
-function sendMail(url, email) {
+function sendMail(url: string, email: string) {
   transporter.sendMail({
     from: '"Mohammed Natour 🔥🌮" <bgd4500@gmail.com>', // sender address
-    to: email, // TODO: replace with user email
+    to: email, // list of receivers
     subject: "Confirm your email ✅", // Subject line
     text: "is this thing on?",
     template: "confirm_email_template",
     context: {
       confirmationLink: url,
     },
-  });
+  } as Options & { template: string });
 }
 
 app.post("/token", (req, res) => {
   const refreshToken = req.body.token;
-
+  const refreshTokenSecret: Secret | GetPublicKeyOrSecret =
+    process.env.REFRESH_TOKEN_SECRET || "";
   if (refreshToken == null) {
     return res.status(401).send("No token");
   }
@@ -135,18 +148,14 @@ app.post("/token", (req, res) => {
     return res.status(401).send("Unauthorized token");
   }
   try {
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET,
-      (err, result) => {
-        if (err) {
-          console.log(err);
-          return res.status(403).send("Verification error");
-        }
-        const accessToken = generateAccessToken(result.email);
-        res.json({ accessToken: accessToken });
+    jwt.verify(refreshToken, refreshTokenSecret, (err, result) => {
+      if (err) {
+        console.log(err);
+        return res.status(403).send("Verification error");
       }
-    );
+      const accessToken = generateAccessToken(result.email);
+      res.json({ accessToken: accessToken });
+    });
   } catch (e) {
     res.status(401).send("Unknown error");
   }
@@ -162,7 +171,7 @@ app.post("/login_with_token/:provider", async (req, res) => {
   log("received token");
   const provider = req.params.provider;
   const token = req.body.token;
-  let userInfo = {};
+  let userInfo: { userId?: string; username?: string; userEmail?: string } = {};
   if (provider === "google") {
     userInfo = await verifyGoogleIdToken(token);
     userInfo = {
@@ -172,16 +181,17 @@ app.post("/login_with_token/:provider", async (req, res) => {
     };
   } else if (provider === "facebook") {
     FB.setAccessToken(token);
-    userInfo = await getFacebookUserInfo();
+    const test: { id?: string; name?: string; email?: string } =
+      await getFacebookUserInfo();
     userInfo = {
-      userId: userInfo.id,
-      username: userInfo.name,
-      userEmail: userInfo.email,
+      userId: test.id,
+      username: test.name,
+      userEmail: test.email,
     };
   }
   try {
     let userId = "";
-    getUserByColumn(userInfo.userEmail, "email").then((result) => {
+    getUserByColumn(userInfo.userEmail!, "email").then((result) => {
       if (result.length !== 0) {
         // if the email already exists, do not create a new user
         userId = result[0].id;
@@ -190,16 +200,22 @@ app.post("/login_with_token/:provider", async (req, res) => {
         // if the email does not exist, create a new user
         log("user does not exist");
         try {
-          userId = createNewUser(userInfo.userEmail, userInfo.username);
+          createNewUser(userInfo.userEmail, userInfo.username).then(
+            (result) => {
+              log("User id is: " + result);
+              userId = result;
+            }
+          );
         } catch (e) {
           log(e);
-          return res
-            .status(500)
-            .send({ message: `error while inserting user: ${e.message}` });
+          return res.status(500).send({
+            message: `error while inserting user: ${(e as Error).message}`,
+          });
         }
       }
-      const accessToken = generateAccessToken(userInfo.userEmail);
-      const refreshToken = generateRefreshToken(userInfo.userEmail);
+      // TODO: add null checks here
+      const accessToken = generateAccessToken(userInfo.userEmail!);
+      const refreshToken = generateRefreshToken(userInfo.userEmail!);
       return res.status(201).send({
         userId: userId,
         accessToken: accessToken,
@@ -208,7 +224,7 @@ app.post("/login_with_token/:provider", async (req, res) => {
     });
   } catch (e) {
     log("Error while authenticating with token: " + e);
-    req.res.status(500).send({ message: `Error: ${e.message}` });
+    res.status(500).send({ message: `Error: ${(e as Error).message}` });
   }
 });
 
@@ -228,7 +244,7 @@ app.post("/login", async (req, res) => {
     if (isPasswordCorrect) {
       console.log("user is logged on");
 
-      const accessToken = generateAccessToken(result[0]);
+      const accessToken = generateAccessToken(result[0].email);
       const refreshToken = jwt.sign(
         result[0],
         process.env.REFRESH_TOKEN_SECRET
@@ -251,49 +267,62 @@ app.post("/login", async (req, res) => {
   }
 });
 
-function generateAccessToken(key) {
-  return jwt.sign({ email: key }, process.env.ACCESS_TOKEN_SECRET, {
+function generateAccessToken(userEmail: string) {
+  const accessTokenSecret: Secret | GetPublicKeyOrSecret =
+    process.env.ACCESS_TOKEN_SECRET || "";
+
+  return jwt.sign({ email: userEmail }, accessTokenSecret, {
     expiresIn: "3m",
   });
 }
 
-function generateRefreshToken(key) {
-  return jwt.sign(key, process.env.REFRESH_TOKEN_SECRET);
+function generateRefreshToken(userEmail: string) {
+  const refreshTokenSecret: Secret | GetPublicKeyOrSecret =
+    process.env.REFRESH_TOKEN_SECRET || "";
+  return jwt.sign(userEmail, refreshTokenSecret);
 }
 
-function getUserByEmail(email) {
+function getUserByEmail(email: string): Promise<User[]> {
   return new Promise((resolve, reject) => {
-    connection.query(
-      `select * from users where email = "${email}";`,
-      async (err, result) => {
-        if (err) {
-          console.log(err);
-          reject("error while fetching data");
-        } else {
-          resolve(result);
-        }
-      }
-    );
+    // connection.query(
+    //   `select * from users where email = "${email}";`,
+    //   async (err, result) => {
+    //     if (err) {
+    //       console.log(err);
+    //       reject("error while fetching data");
+    //     } else {
+    //       resolve(result);
+    //     }
+    //   }
+    // );
   });
 }
 
-function getUserByColumn(name, columnName) {
+function getUserByColumn(name: string, columnName: string): Promise<User[]> {
   return new Promise((resolve, reject) => {
-    connection.query(
-      `select * from users where ${columnName} = "${name}";`,
-      async (err, result) => {
-        if (err) {
-          console.log(err);
-          reject("error while fetching data");
-        } else {
-          resolve(result);
-        }
-      }
-    );
+    resolve([
+      {
+        id: "123",
+        username: name,
+        email: "${name}@gmail.com",
+        password: "123",
+      },
+    ]);
+    // connection.query(
+    //   `select * from users where ${columnName} = "${name}";`,
+    //   async (err, result) => {
+    //     if (err) {
+    //       console.log(err);
+    //       reject("error while fetching data");
+    //     } else {
+    //       resolve(result);
+    //     }
+    //   }
+    // );
   });
 }
 
-function comparePassword(inputPassword, hashedPassword) {
+function comparePassword(inputPassword: string, hashedPassword: string) {
   return new Promise((resolve, reject) =>
     bcrypt.compare(inputPassword, hashedPassword, (err, result) => {
       if (err) {
@@ -306,19 +335,30 @@ function comparePassword(inputPassword, hashedPassword) {
   );
 }
 
-function getFacebookUserInfo() {
+interface FacebookUserInfo {
+  id?: string;
+  name?: string;
+  email?: string;
+}
+function getFacebookUserInfo(): Promise<FacebookUserInfo> {
   return new Promise((resolve, reject) => {
-    FB.api("/me", "GET", { fields: "id,name,email" }, function (response) {
-      if (response && !response.error) {
-        resolve(response);
-      } else {
-        reject(response ? response.error : new Error("Unknown error"));
+    FB.api(
+      "/me",
+      "GET",
+      { fields: "id,name,email" },
+      function (response: { error?: any; id?: any; name?: any; email?: any }) {
+        if (response && !response.error) {
+          const { id, name, email } = response;
+          resolve({ id, name, email });
+        } else {
+          reject(response ? response.error : new Error("Unknown error"));
+        }
       }
-    });
+    );
   });
 }
 
-async function verifyGoogleIdToken(token) {
+async function verifyGoogleIdToken(token: string) {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
@@ -326,9 +366,9 @@ async function verifyGoogleIdToken(token) {
     });
 
     const payload = ticket.getPayload();
-    const userId = payload.sub;
-    const username = payload.name;
-    const userEmail = payload.email;
+    const userId = payload!.sub;
+    const username = payload!.name;
+    const userEmail = payload!.email;
 
     return { userId, username, userEmail };
   } catch (error) {

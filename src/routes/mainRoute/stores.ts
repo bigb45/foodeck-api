@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { connection } from "../../../db";
 import { authenticateJwt } from "../../middleware/middleware.js";
 
@@ -22,6 +22,26 @@ storeRouter.get(
     }
   }
 );
+
+storeRouter.get("/bento_categories", async (req: Request, res: Response) => {
+  res.status(200).json([
+    {
+      id: 1,
+      name: "Desserts",
+      subText: "Get your sweet tooth fix with these delicious desserts",
+    },
+    {
+      id: 2,
+      name: "Ramen",
+      subText: "Authentic Asian Ramen, made with love",
+    },
+    {
+      id: 3,
+      name: "Snacks",
+      subText: "Delicious snacks to keep you going",
+    },
+  ]);
+});
 
 storeRouter.get(
   // get all menus of a store by store id

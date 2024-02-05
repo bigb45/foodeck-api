@@ -22,6 +22,25 @@ storeRouter.get("/all",
         return res.status(500).send("Error: " + e);
     }
 });
+storeRouter.get("/bento_categories", async (req, res) => {
+    res.status(200).json([
+        {
+            id: 1,
+            name: "Desserts",
+            subText: "Get your sweet tooth fix with these delicious desserts",
+        },
+        {
+            id: 2,
+            name: "Ramen",
+            subText: "Authentic Asian Ramen, made with love",
+        },
+        {
+            id: 3,
+            name: "Snacks",
+            subText: "Delicious snacks to keep you going",
+        },
+    ]);
+});
 storeRouter.get(
 // get all menus of a store by store id
 "/:store_id/menu/all", async (req, res) => {
@@ -40,14 +59,6 @@ storeRouter.get(
                         description: true,
                         price: true,
                         cover_image_url: true,
-                    },
-                    where: {
-                        // store_item_section_id: {
-                        //   equals: section_id,
-                        // },
-                        store_id: {
-                            equals: req.params.store_id,
-                        },
                     },
                 },
             },
