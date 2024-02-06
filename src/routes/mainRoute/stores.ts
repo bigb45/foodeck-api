@@ -25,7 +25,9 @@ storeRouter.get(
 
 storeRouter.get("/bento_categories", async (req: Request, res: Response) => {
   try {
-    const categories = await connection.bentoSection.findMany();
+    const categories = await connection.bentoSection.findMany({
+      orderBy: { title: "desc" },
+    });
     res.status(200).json(categories);
   } catch (e) {
     log(e);
@@ -71,14 +73,32 @@ storeRouter.get(
   // get store menu by id, returns menu info, isMenuFavorite, menu customization options
   "/:store_id/menu/:menu_id",
   async (req, res) => {
+    log(
+      `getting meal info for ${req.params.menu_id}, in store ${req.params.store_id}`
+    );
     try {
       const menu = await connection.storeItem.findUnique({
+        include: {
+          store: {
+            select: {
+              store_name: true,
+              address: true,
+            },
+          },
+        },
         where: {
           item_id: req.params.menu_id,
           store: { store_id: { equals: req.params.store_id } },
         },
       });
-      res.status(200).json(menu);
+      // if (menu && menu.store) {
+      const flattenedMenu = {
+        ...menu.store,
+        ...menu,
+        store: undefined, // this removes the store
+      };
+      res.status(200).json(flattenedMenu);
+      // }
     } catch (e) {
       log(e);
       return res.status(500).send("Error: " + e);
@@ -138,8 +158,19 @@ storeRouter.get("/:store_id/:menu_id/options", async (req, res) => {
 
 storeRouter.get(
   "/:id",
-  /* authenticateJwt,*/ (req, res) => {
-    return res.status(200).send({ id: req.params.id });
+  /* authenticateJwt,*/ async (req, res) => {
+    log("request made");
+    try {
+      const store = await connection.store.findUnique({
+        where: {
+          store_id: req.params.id,
+        },
+      });
+      return res.status(200).json(store);
+    } catch (e) {
+      log(e);
+      return res.status(500).send("Error: " + e);
+    }
   }
 );
 
