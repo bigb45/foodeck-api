@@ -24,7 +24,7 @@ model StoreItem {
 
   @@index([store_id])
   @@index([option_section_id])
-  @@index([store_item_section_id], map: "StoreItem_section_id_idx")
+  @@index([store_item_section_id])
 }
 
 model Offer {

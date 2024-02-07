@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import { connection } from "../../../db";
 import { authenticateJwt } from "../../middleware/middleware.js";
+import { Store } from "@prisma/client";
+import { randomUUID } from "crypto";
+import { create } from "domain";
 
 const log = console.log;
 
@@ -173,5 +176,69 @@ storeRouter.get(
     }
   }
 );
+
+// region: Store Post Requests
+
+storeRouter.post("/add_store", async (req, res) => {
+  log("request: ", req.body);
+  try {
+    const store: Store = await connection.store.create({
+      data: {
+        store_id: randomUUID(),
+        store_name: req.body.store_name,
+        address: req.body.address,
+        delivery_time: req.body.delivery_time,
+        phone: req.body.phone,
+        cover_image_url: req.body.cover_image_url || "",
+        rating: req.body.rating || 0,
+        // Section: [],
+        // StoreItem: [],
+      },
+    });
+    return res.status(200).json(store);
+  } catch (e) {
+    log(e);
+    return res.status(500).send("Error: " + e);
+  }
+});
+
+storeRouter.post("/add_section", async (req, res) => {
+  log("adding section: ", req.body.section_title);
+  try {
+    const section = await connection.storeSection.create({
+      data: {
+        section_id: randomUUID(),
+        section_title: req.body.section_title,
+        store_id: req.body.store_id,
+      },
+    });
+    return res.status(200).json(section);
+  } catch (e) {
+    log(e);
+    return res.status(500).send("Error: " + e);
+  }
+});
+
+storeRouter.post("/add_menu", async (req, res) => {
+  log("adding menu: ", req.body.menu_name);
+  try {
+    const menu = await connection.storeItem.create({
+      data: {
+        item_id: randomUUID(),
+        store_item_section_id: req.body.section_id,
+        item_name: req.body.menu_name,
+        description: req.body.description,
+        price: req.body.price,
+        cover_image_url: req.body.image_url,
+        store_id: req.body.restaurant_id,
+      },
+    });
+    return res.status(200).json(menu);
+  } catch (e) {
+    log(e);
+    return res.status(500).send("Error: " + e);
+  }
+});
+// endRegion
 
 export default storeRouter;
