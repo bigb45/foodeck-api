@@ -1,9 +1,7 @@
+import { store } from "@prisma/client";
+import { randomUUID } from "crypto";
 import express, { Request, Response } from "express";
 import { connection } from "../../../db";
-import { authenticateJwt } from "../../middleware/middleware.js";
-import { Store } from "@prisma/client";
-import { randomUUID } from "crypto";
-import { create } from "domain";
 
 const log = console.log;
 
@@ -28,7 +26,7 @@ storeRouter.get(
 
 storeRouter.get("/bento_categories", async (req: Request, res: Response) => {
   try {
-    const categories = await connection.bentoSection.findMany({
+    const categories = await connection.bentosection.findMany({
       orderBy: { title: "desc" },
     });
     res.status(200).json(categories);
@@ -43,7 +41,7 @@ storeRouter.get(
   "/:store_id/menu/all",
   async (req, res) => {
     try {
-      const sections = await connection.storeSection.findMany({
+      const sections = await connection.storesection.findMany({
         where: {
           store_id: req.params.store_id,
         },
@@ -76,11 +74,8 @@ storeRouter.get(
   // get store menu by id, returns menu info, isMenuFavorite, menu customization options
   "/:store_id/menu/:menu_id",
   async (req, res) => {
-    log(
-      `getting meal info for ${req.params.menu_id}, in store ${req.params.store_id}`
-    );
     try {
-      const menu = await connection.storeItem.findUnique({
+      const menu = await connection.storeitem.findUnique({
         include: {
           store: {
             select: {
@@ -131,7 +126,7 @@ storeRouter.get("/bento_categories/:id", async (req, res) => {
 
 storeRouter.get("/:store_id/:menu_id/options", async (req, res) => {
   try {
-    const menuOptions = await connection.optionSection.findMany({
+    const menuOptions = await connection.optionsection.findMany({
       where: {
         store_item_id: req.params.menu_id,
       },
@@ -182,7 +177,7 @@ storeRouter.get(
 storeRouter.post("/add_store", async (req, res) => {
   log("request: ", req.body);
   try {
-    const store: Store = await connection.store.create({
+    const store: store = await connection.store.create({
       data: {
         store_id: randomUUID(),
         store_name: req.body.store_name,
@@ -205,7 +200,7 @@ storeRouter.post("/add_store", async (req, res) => {
 storeRouter.post("/add_section", async (req, res) => {
   log("adding section: ", req.body.section_title);
   try {
-    const section = await connection.storeSection.create({
+    const section = await connection.storesection.create({
       data: {
         section_id: randomUUID(),
         section_title: req.body.section_title,
@@ -222,7 +217,7 @@ storeRouter.post("/add_section", async (req, res) => {
 storeRouter.post("/add_menu", async (req, res) => {
   log("adding menu: ", req.body.menu_name);
   try {
-    const menu = await connection.storeItem.create({
+    const menu = await connection.storeitem.create({
       data: {
         item_id: randomUUID(),
         store_item_section_id: req.body.section_id,

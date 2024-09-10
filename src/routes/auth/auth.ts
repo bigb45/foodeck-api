@@ -7,7 +7,7 @@ import hbs from "nodemailer-express-handlebars";
 import { OAuth2Client } from "google-auth-library";
 import FB from "fb";
 import { generateId } from "../../middleware/middleware";
-import { User } from "@prisma/client";
+import { user } from "@prisma/client";
 import { Options } from "nodemailer/lib/mailer";
 const log = console.log;
 // configure mailing service
@@ -282,7 +282,7 @@ function generateRefreshToken(userEmail: string) {
   return jwt.sign(userEmail, refreshTokenSecret);
 }
 
-function getUserByEmail(email: string): Promise<User[]> {
+function getUserByEmail(email: string): Promise<user[]> {
   return new Promise((resolve, reject) => {
     // connection.query(
     //   `select * from users where email = "${email}";`,
@@ -298,7 +298,7 @@ function getUserByEmail(email: string): Promise<User[]> {
   });
 }
 
-function getUserByColumn(name: string, columnName: string): Promise<User[]> {
+function getUserByColumn(name: string, columnName: string): Promise<user[]> {
   return new Promise((resolve, reject) => {
     resolve([
       {

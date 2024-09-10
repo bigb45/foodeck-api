@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
+  provider     = "postgresql"
   url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
-model StoreItem {
+model storeitem {
   item_id               String         @id @db.VarChar(255)
   store_item_section_id String         @db.VarChar(255)
   item_name             String         @db.VarChar(255)
@@ -17,84 +17,98 @@ model StoreItem {
   cover_image_url       String?        @db.VarChar(255)
   store_id              String         @db.VarChar(255)
   option_section_id     String?        @db.VarChar(255)
-  store                 Store          @relation(fields: [store_id], references: [store_id])
-  OptionSection         OptionSection? @relation(fields: [option_section_id], references: [section_id])
-  section               StoreSection   @relation(fields: [store_item_section_id], references: [section_id])
-  Option                Option[]
+  store                 store          @relation(fields: [store_id], references: [store_id])
+  OptionSection         optionsection? @relation(fields: [option_section_id], references: [section_id])
+  section               storesection   @relation(fields: [store_item_section_id], references: [section_id])
+  Option                option[]
 
   @@index([store_id])
   @@index([option_section_id])
   @@index([store_item_section_id])
+  @@map("StoreItem")
 }
 
-model Offer {
+model offer {
   offer_id        String  @id @db.VarChar(255)
   offer_name      String  @db.VarChar(255)
   cover_image_url String? @db.VarChar(255)
+
+  @@map("Offer")
 }
 
-model Store {
+model store {
   store_id        String         @id @db.VarChar(255)
   store_name      String         @db.VarChar(255)
   address         String         @db.VarChar(255)
   delivery_time   Int
   phone           String         @db.VarChar(255)
   cover_image_url String?        @db.VarChar(255)
-  rating          Float          @db.Float
-  Section         StoreSection[]
-  StoreItem       StoreItem[]
+  rating          Float          @db.DoublePrecision
+  Section         storesection[]
+  StoreItem       storeitem[]
+
+  @@map("Store")
 }
 
-model User {
+model user {
   id       String  @id @db.VarChar(255)
   username String  @db.VarChar(255)
   email    String  @unique(map: "email") @db.VarChar(255)
   password String? @db.VarChar(255)
+
+  @@map("User")
 }
 
-model Option {
+model option {
   option_id     String        @id @db.VarChar(255)
   option_name   String        @db.VarChar(255)
   price         Float
   section_id    String        @db.VarChar(255)
   store_item_id String        @db.VarChar(255)
-  section       OptionSection @relation(fields: [section_id], references: [section_id])
-  storeItem     StoreItem     @relation(fields: [store_item_id], references: [item_id])
+  section       optionsection @relation(fields: [section_id], references: [section_id])
+  storeItem     storeitem     @relation(fields: [store_item_id], references: [item_id])
 
   @@index([section_id])
   @@index([store_item_id])
+  @@map("Option")
 }
 
-model OptionSection {
+model optionsection {
   section_id    String      @id @db.VarChar(255)
   section_name  String      @db.VarChar(255)
   required      Boolean     @default(false)
   store_item_id String      @db.VarChar(255)
-  sectionType   SectionType @default(radio)
-  Option        Option[]
-  StoreItem     StoreItem[]
+  sectionType   sectiontype @default(radio)
+  Option        option[]
+  StoreItem     storeitem[]
 
   @@index([store_item_id], map: "Section_store_item_id_idx")
+  @@map("OptionSection")
 }
 
-model StoreSection {
+model storesection {
   section_id    String      @id @db.VarChar(255)
   section_title String?     @db.VarChar(255)
   store_id      String?     @db.VarChar(255)
-  StoreItem     StoreItem[]
-  Store         Store?      @relation(fields: [store_id], references: [store_id])
+  StoreItem     storeitem[]
+  Store         store?      @relation(fields: [store_id], references: [store_id])
 
   @@index([store_id], map: "Section_store_id_idx")
+  @@map("StoreSection")
 }
 
-model BentoSection {
+model bentosection {
   id        String  @id @db.VarChar(255)
   name      String? @db.VarChar(255)
   title     String? @db.VarChar(255)
   image_url String? @db.VarChar(255)
+
+  @@map("BentoSection")
 }
 
-enum SectionType {
+enum sectiontype {
   radio
   checkbox
+
+  @@map("SectionType")
 }
