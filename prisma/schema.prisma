@@ -43,7 +43,7 @@ model store {
   delivery_time   Int
   phone           String         @db.VarChar(255)
   cover_image_url String?        @db.VarChar(255)
-  rating          Float          @db.DoublePrecision
+  rating          Float
   Section         storesection[]
   StoreItem       storeitem[]
 
